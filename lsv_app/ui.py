@@ -7,8 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from . import core
-from .export import workbook_bytes, all_samples_zip, bars_csv, means_csv, safe_name
-from .plots import curves_figure, bars_figure, nyquist_figure, image_bytes
+from .export import workbook_bytes, all_samples_zip, bars_csv, means_csv, safe_name, table_txt
+from .plots import curves_figure, bars_figure, image_bytes
 
 VIEWS = ['Amostras', 'Tratamento', 'Planilhas', 'Gráficos']
 
@@ -285,13 +285,6 @@ def render_sample(sample):
                         st.caption(f"Rs = {point['rs']:.6g} Ω · linha {point['line']}")
                     except ValueError as error:
                         st.warning(str(error))
-                    with st.expander('Colunas da impedância'):
-                        parsed = core.parse_text(eis['text'], eis.get('block'))
-                        for field, title in [('zx', 'Z′'), ('zy', 'Z″ ou −Z″')]:
-                            fk = seed(f"e{eis['id']}_{field}", int(eis[field]))
-                            st.selectbox(title, list(range(len(parsed['headers']))), key=fk,
-                                         format_func=lambda i, h=parsed['headers']: f'{i+1} · {h[i]}',
-                                         on_change=eis_field, args=(eis['id'], field, fk))
                     st.button('Remover impedância', key=key(f'remove_eis_{sid}_{rep}'), on_click=remove_eis, args=(sid, rep))
                 elif curve:
                     _text_curve(curve, 'rs', 'Rs manual (Ω)')
@@ -311,14 +304,6 @@ def render_samples():
         for col, sample in zip(columns, state()['samples'][i:i+2]):
             with col:
                 render_sample(sample)
-    if state()['impedances']:
-        show = st.checkbox('Mostrar gráfico de impedância', key='show_nyquist')
-        if show:
-            fig, notes = nyquist_figure(state())
-            st.pyplot(fig, width='stretch')
-            plt.close(fig)
-            for note in notes:
-                st.caption(note)
 
 
 def render_treatment():
@@ -362,11 +347,17 @@ def render_workbooks(result):
             if curve:
                 st.caption(curve['name'])
                 st.dataframe(pd.DataFrame(curve['rows'], columns=core.column_headers(result['params'])), hide_index=True, width='stretch')
+                st.download_button('Baixar LSV TXT', table_txt(curve['rows'], core.column_headers(result['params'])),
+                                   file_name=f"{safe_name(group['sample']['name'])}_LSV_{rep}.txt",
+                                   mime='text/plain', key=f'txt_{sid}_{rep}')
             else:
                 st.info('Nenhum LSV válido nesta posição. Confira os arquivos e parâmetros.')
     with tabs[2]:
         if group['mean']:
             st.dataframe(pd.DataFrame(core.mean_rows(group), columns=core.MEAN_HEADERS), hide_index=True, width='stretch')
+            st.download_button('Baixar média e DP TXT', table_txt(core.mean_rows(group), core.MEAN_HEADERS),
+                               file_name=safe_name(group['sample']['name']) + '_media_DP.txt',
+                               mime='text/plain', key=f'txt_mean_{sid}')
         else:
             st.info('A média requer duas ou três réplicas válidas em uma faixa comum.')
     left, right = st.columns(2)
@@ -407,7 +398,7 @@ def render_graphs(result):
         csv_data, filename = means_csv(result, x, y), 'LSV_medias_DP.csv'
     for note in notes:
         st.caption(note)
-    st.pyplot(fig, width='stretch')
+    st.pyplot(fig, width=760)
     png = image_bytes(fig)
     svg = image_bytes(fig, 'svg')
     plt.close(fig)

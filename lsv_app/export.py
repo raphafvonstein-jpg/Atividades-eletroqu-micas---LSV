@@ -25,6 +25,15 @@ def _csv(rows):
     return ('\ufeff' + buffer.getvalue()).encode('utf-8')
 
 
+def table_txt(rows, headers):
+    """Tabela numérica em UTF-8, com cabeçalho e colunas separadas por tabulação."""
+    buffer = io.StringIO(newline='')
+    writer = csv.writer(buffer, delimiter='\t', lineterminator='\n')
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return buffer.getvalue().encode('utf-8-sig')
+
+
 def bars_csv(result):
     rows = [['amostra', 'j_geom_mA_cm2', 'sobrepotencial_medio_mV', 'DP_amostral_mV', 'n', 'status']]
     for group in result['groups']:
