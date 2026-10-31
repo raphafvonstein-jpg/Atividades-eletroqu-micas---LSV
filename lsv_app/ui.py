@@ -409,12 +409,12 @@ def render_graphs(result):
 
 
 def main():
-    st.set_page_config(page_title='LSV e impedância', page_icon='📈', layout='wide')
+    st.set_page_config(page_title='LSV - catalyst activity', page_icon='📈', layout='wide')
     st.session_state.setdefault('lsv_state', core.new_session())
     st.session_state.setdefault('lsv_epoch', 0)
     st.session_state.setdefault('lsv_revision', 0)
     st.markdown('<style>div[data-testid="stFileUploaderDropzone"]{padding:8px}div[data-testid="stFileUploaderDropzoneInstructions"]{font-size:11px}div[data-testid="stVerticalBlockBorderWrapper"]{border-radius:10px}</style>', unsafe_allow_html=True)
-    st.title('LSV e impedância')
+    st.title('LSV - catalyst activity')
     with st.sidebar:
         st.subheader('Sessão')
         ik = key('session_upload')
