@@ -19,8 +19,8 @@ class UITests(unittest.TestCase):
         at = self.app(False)
         at.text_input(key='e0_sample_1_name').input('Minha amostra').run()
         self.assertEqual(at.session_state['lsv_state']['samples'][0]['name'], 'Minha amostra')
-        at.radio(key='view').set_value('Tratamento').run()
-        at.radio(key='view').set_value('Amostras').run()
+        at.button_group(key='view').set_value('Tratamento').run()
+        at.button_group(key='view').set_value('Amostras').run()
         self.assertEqual(at.text_input(key='e0_sample_1_name').value, 'Minha amostra')
         self.assertEqual(len(at.exception), 0)
 
@@ -33,11 +33,11 @@ class UITests(unittest.TestCase):
 
     def test_workbooks_and_curves_and_bars(self):
         at = self.app()
-        at.radio(key='view').set_value('Planilhas').run()
+        at.button_group(key='view').set_value('Planilhas').run()
         self.assertEqual(len(at.exception), 0)
         self.assertEqual(len(at.tabs), 4)
         self.assertEqual(sum(len(df.value.columns) == 6 for df in at.dataframe), 1)
-        at.radio(key='view').set_value('Gráficos').run()
+        at.button_group(key='view').set_value('Gráficos').run()
         self.assertEqual(len(at.exception), 0)
         at.selectbox(key='e0_setting_chartKind').set_value('bars').run()
         self.assertEqual(len(at.exception), 0)

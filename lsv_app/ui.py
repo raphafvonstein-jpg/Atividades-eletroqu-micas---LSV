@@ -248,9 +248,9 @@ def render_sample(sample):
             st.error(error)
         count = sum(c['sampleId'] == sid for c in state()['curves'])
         c1, c2 = st.columns([2, 1])
-        with c1.popover(f'Adicionar até 3 LSV · {count}/3'):
+        with c1:
             bk = key(f"bulk_{sid}_{sample.get('bulkEpoch', 0)}")
-            st.file_uploader('Arquivos LSV', type=['txt', 'dat', 'csv', 'tsv'], accept_multiple_files=True,
+            st.file_uploader(f'Adicionar até 3 LSV · {count}/3', type=['txt', 'dat', 'csv', 'tsv'], accept_multiple_files=True,
                              key=bk, on_change=upload_bulk, args=(sid, bk), disabled=count == 3)
         c2.button('Excluir amostra', key=key(f'del_sample_{sid}'), on_click=delete_sample, args=(sid,))
         for rep in (1, 2, 3):
@@ -424,7 +424,10 @@ def main():
         st.caption('Os arquivos são processados na sessão do aplicativo. Salve o JSON para continuar depois.')
     if st.session_state.get('lsv_error'):
         st.error(st.session_state['lsv_error'])
-    view = st.radio('Seção', VIEWS, horizontal=True, key='view', label_visibility='collapsed')
+    view = st.segmented_control('Seção', VIEWS, default=VIEWS[0], key='view',
+                                label_visibility='collapsed', width='stretch')
+    if view is None:
+        return
     if view == 'Amostras':
         render_samples()
     elif view == 'Tratamento':
