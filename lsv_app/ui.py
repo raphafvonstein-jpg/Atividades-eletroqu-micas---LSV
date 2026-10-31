@@ -314,13 +314,13 @@ def render_treatment():
     st.selectbox('Eletrodo de referência usado', core.REFERENCES, key=refk, format_func=lambda v: labels[v],
                  on_change=setting_field, args=('referenceElectrode', refk))
     ref = settings['referenceElectrode']
-    fields = [('referenceElectrolyte', 'Eletrólito da referência'), ('ph', 'pH da solução'),
+    fields = [('referenceElectrolyte', 'Eletrólito'), ('ph', 'pH da solução'),
               ('refPotential', 'Eref vs SHE (V)'), ('temperature', 'Temperatura (°C)'), ('eq', 'Eeq para sobrepotencial (V)')]
     cols = st.columns(3)
     for i, (field, label) in enumerate(fields):
         k = seed('setting_' + field, str(settings[field]))
         with cols[i % 3]:
-            st.text_input(label, key=k, disabled=field != 'eq' and (not ref or ref == 'RHE') or field == 'refPotential' and ref == 'SHE',
+            st.text_input(label, key=k, disabled=(field not in ('eq', 'referenceElectrolyte') and (not ref or ref == 'RHE')) or (field == 'refPotential' and ref == 'SHE'),
                           on_change=setting_field, args=(field, k))
     with st.expander('Ver fórmulas'):
         data = [{'Coluna': letter, 'Resultado': name, 'Unidade': unit, 'Fórmula': equation} for letter, name, unit, equation in core.COLUMNS]

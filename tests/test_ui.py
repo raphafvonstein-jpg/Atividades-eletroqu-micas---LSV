@@ -31,6 +31,18 @@ class UITests(unittest.TestCase):
         self.assertEqual(at.session_state['lsv_state']['samples'][0]['name'], 'Amostra A')
         self.assertGreater(len(at.error), 0)
 
+    def test_electrolyte_editable_without_reference_and_with_rhe(self):
+        at = self.app(False)
+        at.button_group(key='view').set_value('Tratamento').run()
+        field = at.text_input(key='e0_setting_referenceElectrolyte')
+        self.assertEqual(field.label, 'Eletrólito')
+        self.assertFalse(field.disabled)
+        field.input('KOH 1 mol/L').run()
+        self.assertEqual(at.session_state['lsv_state']['settings']['referenceElectrolyte'], 'KOH 1 mol/L')
+        at.selectbox(key='e0_setting_referenceElectrode').set_value('RHE').run()
+        self.assertFalse(at.text_input(key='e0_setting_referenceElectrolyte').disabled)
+        self.assertEqual(at.text_input(key='e0_setting_referenceElectrolyte').value, 'KOH 1 mol/L')
+
     def test_workbooks_and_curves_and_bars(self):
         at = self.app()
         at.button_group(key='view').set_value('Planilhas').run()
