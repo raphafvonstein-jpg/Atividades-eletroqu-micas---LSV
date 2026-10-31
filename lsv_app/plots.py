@@ -1,9 +1,11 @@
 """Gráficos científicos para Streamlit e exportação em PNG/SVG."""
 import io
 import math
+import textwrap
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 from .core import COLUMNS, GEO, ACTIVE, ETA, ETA_MV, sample_metric, impedance
 
@@ -26,9 +28,10 @@ def metric_text(values, axis):
 def curves_figure(result, x, y, mode='raw'):
     fig, ax = _figure()
     notes, plotted = [], 0
+    metric_handles = []
     for index, group in enumerate(result['groups']):
         name, color = group['sample']['name'], COLORS[index % len(COLORS)]
-        used_mean = bool(mode == 'mean' and group['mean'] and all(r['values'][y] is not None for r in group['mean']))
+        used_mean = bool(mode == 'mean' and group['mean'] and all(r['values'][x] is not None and r['values'][y] is not None for r in group['mean']))
         if used_mean:
             a = np.array([[r['values'][x], r['values'][y], r['sd'][y]] for r in group['mean']])
             ax.fill_between(a[:, 0], a[:, 1] - a[:, 2], a[:, 1] + a[:, 2], color=color, alpha=.17, linewidth=0)
@@ -38,9 +41,10 @@ def curves_figure(result, x, y, mode='raw'):
             for c in group['curves']:
                 rows = [r for r in c['rows'] if r[x] is not None and r[y] is not None]
                 if not rows:
+                    notes.append(name + '_Eletr' + str(c['rep']) + ': faltam dados para os eixos selecionados. Confira Rs/impedância e a área de normalização.')
                     continue
-                a = np.array(rows)
-                ax.plot(a[:, x], a[:, y], color=color, linewidth=1.3,
+                a = np.array([[r[x], r[y]] for r in rows], dtype=float)
+                ax.plot(a[:, 0], a[:, 1], color=color, linewidth=1.3,
                         linestyle={1: '-', 2: '--', 3: ':'}[c['rep']], label=name + '_Eletr' + str(c['rep']))
                 plotted += 1
             if mode == 'mean' and group['curves']:
@@ -51,11 +55,8 @@ def curves_figure(result, x, y, mode='raw'):
             values = sample_metric(group)
             if values[x] is not None and values[y] is not None:
                 ax.scatter([values[x]], [values[y]], color=color, s=28, edgecolors='white', zorder=5)
-                ax.annotate(name + '\n' + metric_text(values, x), xy=(values[x], values[y]),
-                            xytext=(10 if index % 2 == 0 else -10, 15 + index % 3 * 20), textcoords='offset points',
-                            ha='left' if index % 2 == 0 else 'right', fontsize=9, color=color,
-                            bbox=dict(boxstyle='round,pad=.35', fc='white', ec=color, alpha=.95),
-                            arrowprops=dict(arrowstyle='-', color=color, lw=.8), annotation_clip=True)
+                metric_handles.append(Line2D([], [], marker='o', linestyle='none', color=color,
+                                             label=textwrap.fill(name, width=24) + '\n' + metric_text(values, x)))
         except ValueError as error:
             notes.append(name + ' · 10 mA/cm²: ' + str(error))
     ref_unit = 'V vs ' + result['params']['reference_name'] if x == 0 else COLUMNS[x][2]
@@ -66,6 +67,11 @@ def curves_figure(result, x, y, mode='raw'):
         ax.legend(frameon=False, fontsize=9, loc='best')
     else:
         ax.text(.5, .5, 'Não há curvas válidas para esses eixos.', transform=ax.transAxes, ha='center')
+    if metric_handles:
+        height = max(5.5, 1.2 + sum(handle.get_label().count('\n') + 1 for handle in metric_handles) * .26)
+        fig.set_size_inches(9, height)
+        fig.legend(handles=metric_handles, loc='outside right upper', title='10 mA/cm²',
+                   frameon=False, fontsize=9, title_fontsize=10, labelspacing=1.2, borderaxespad=1)
     return fig, notes
 
 
